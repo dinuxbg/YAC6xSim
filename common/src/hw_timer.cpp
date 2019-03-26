@@ -4,6 +4,8 @@
 #include <Windows.h>
 #endif
 
+// TODO-Linux
+
 double HwTimer::dFreq;
 HwTimer timer_pool[10]; // support max 10 static timers
 
@@ -22,10 +24,12 @@ void HwTimer::start(unsigned int timer_idx)
   {
     return;
   }
+#ifdef _WIN32
   LARGE_INTEGER PerfCounter;
   QueryPerformanceCounter(&PerfCounter);
   HwTimer &t = timer_pool[timer_idx];
   t.pfCounterStart = PerfCounter.QuadPart;
+#endif
 }
 
 void HwTimer::end(unsigned int timer_idx)
@@ -34,10 +38,12 @@ void HwTimer::end(unsigned int timer_idx)
   {
     return;
   }
+#ifdef _WIN32
   LARGE_INTEGER PerfCounter;
   QueryPerformanceCounter(&PerfCounter);
   HwTimer &t = timer_pool[timer_idx];
   t.pfCounterAll += PerfCounter.QuadPart - t.pfCounterStart;
+#endif
 }
 
 double HwTimer::get_diff_seconds(unsigned int timer_idx)

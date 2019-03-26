@@ -22,7 +22,7 @@
 
 #include "profiler/inc/exe_path_profiler.hpp"
 
-#include "p3/readline/include/readline/readline.h"
+#include "readline/readline.h"
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -141,7 +141,7 @@ public:
   // typedefs/const/friend class:
   typedef std::map<md_addr_t, std::string> sym_tbl_t;
   typedef std::vector<MemRange*> mem_prot_list_t;
-  typedef std::map<half_t,HFILE> f_entry_t;
+  typedef std::map<half_t,FILE *> f_entry_t;
   typedef word_t reg_file_t[64]; // A: 0~31 B: 32~63
   typedef reg_wb_t reg_wb_list_t[8];
   typedef std::map<std::string,DbgBaseCmd*> help_map_t;
@@ -237,7 +237,7 @@ private:
   std::ofstream ofs;
 
   //performance counter for simulator itself
-  DWORD tick_count;
+  uint32_t tick_count;
 
   //profiler
   ExePathProfiler *prof;

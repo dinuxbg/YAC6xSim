@@ -1649,7 +1649,7 @@ DE_FUNC(SUnit,de_32bit,bnop_reg)
 
 DE_FUNC(SUnit,de_32bit,mvk_nc)
 {
-  NO_CONDITION(core,cregz);
+  NO_CONDITION();
   core->push_reg_ch(side,dst,src1);
 }
 

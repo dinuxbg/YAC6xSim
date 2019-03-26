@@ -107,7 +107,7 @@ st_index_t st_hash_start(st_index_t h);
 #define st_hash_start(h) ((st_index_t)(h))
 
 #if defined __GNUC__ && __GNUC__ >= 4
-#pragma GCC visibility pop
+//#pragma GCC visibility pop
 #endif
 
 #if defined(__cplusplus)

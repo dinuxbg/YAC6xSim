@@ -1,5 +1,7 @@
 
 #include <sstream>
+#include <iostream>
+#include <iterator>
 #include <math.h>
 #include "common/inc/hw_timer.hpp"
 #include "jit/inc/jit.hpp"
@@ -8,21 +10,19 @@
 #include "profiler/inc/common_profiler.hpp"
 #include "core/inc/edma.hpp"
 
-#include <Windows.h>
-
 BEGIN_NS
 
 //TMP
-static DWORD bb_tick_total = 0;
+static uint32_t bb_tick_total = 0;
 static word_t bb_cycle_total = 0;
 static word_t bb_inst_total = 0;
 
-LARGE_INTEGER litmp;
-LONGLONG QPart1,QPart2;
-LONGLONG QPart1_BB,QPart2_BB;
+int64_t litmp;
+int64_t QPart1,QPart2;
+int64_t QPart1_BB,QPart2_BB;
 double dfMinus, dfFreq, dfTim, dfAll;
 
-static DWORD total_tick; // TMP
+static uint32_t total_tick; // TMP
 static word_t inst_cache_evit = 0;
 
 Core::tlb_map_t Core::tlb_map;
@@ -52,6 +52,18 @@ qword_t Core::total_cycle = 0;
 qword_t Core::total_inst = 0;
 
 Core::func_hook_t Core::func_hook;
+
+#ifndef _WIN32
+#include <time.h>
+long GetTickCount(void)
+{
+	struct timespec now;
+	int rc = clock_gettime(CLOCK_MONOTONIC_RAW, &now);
+	if (rc != 0)
+		rc = clock_gettime(CLOCK_MONOTONIC, &now);
+	return now.tv_sec * 1000 + now.tv_nsec / 1000 / 1000;
+}
+#endif
 
 typedef void (*unit_decode_func_t)(Core*,Instruction*);
 static unit_decode_func_t unit_decode_tbl[9] = 
@@ -179,8 +191,8 @@ void Core::init()
 #ifdef CORE_CIRCULAR_N_WAY_CACHE
   memset(instCache,NULL,sizeof(instCache));
 #else
-  memset(instCache0,NULL,sizeof(instCache0));
-  memset(instCache1,NULL,sizeof(instCache1));
+  memset(instCache0,0,sizeof(instCache0));
+  memset(instCache1,0,sizeof(instCache1));
 #endif
 
   inst_heap_pos = 0;
@@ -216,13 +228,11 @@ void Core::init()
   JIT::init();
 #endif
 
-#ifdef _WIN32
   tick_count = GetTickCount();
   total_tick = tick_count;
   //QueryPerformanceCounter(&litmp);
   //QPart1 = litmp.QuadPart;
   HwTimer::start(0);
-#endif
 }
 
 md_addr_t Core::fp_decoded = 0x1;
@@ -412,8 +422,8 @@ void Core::cexit_proc()
   HwTimer::end(0);
   inst_heap_list.push_back(inst_current_heap);
 
-  DWORD diff = GetTickCount() - total_tick;
-  DWORD all_running_cylc = get_cycle() + total_cycle;
+  int32_t diff = GetTickCount() - total_tick;
+  int32_t all_running_cylc = get_cycle() + total_cycle;
   get_l2()->status();
   std::stringstream ss;
   ss << "\n*********************************************************\n"
@@ -447,7 +457,7 @@ void Core::cexit_proc()
 }
 
 //TODO vfd  virtual file driver
-/*
+
 #define  O_RDONLY    (0x0000) 
 #define  O_WRONLY    (0x0001) 
 #define  O_RDWR      (0x0002) 
@@ -458,7 +468,7 @@ void Core::cexit_proc()
 
 #define FLAG_TEST(flag,attr) ((flag & attr) != 0)
 
-static const char *get_mode(word_t flag)
+static const char *fget_mode(int flag)
 {
   const char* mode;
 
@@ -498,30 +508,29 @@ static const char *get_mode(word_t flag)
 
   return mode;
 }
-*/
 
-static HFILE get_file(Core *core,half_t dev_fd)
+
+static FILE *get_file(Core *core,half_t dev_fd)
 {
-  HFILE file;
+  FILE *file;
   if(dev_fd <= 2)
   {
-    DWORD nStdHandle;
     switch(dev_fd)
     {
     case 0:
-      nStdHandle = STD_INPUT_HANDLE;
+      file = stdin;
       break;
-      
+
     case 1:
-      nStdHandle = STD_OUTPUT_HANDLE;
+      file = stdout;
       break;
 
     case 2:
-      nStdHandle = STD_ERROR_HANDLE;
+      file = stderr;
       break;
     }
     //file = &__iob_func()[dev_fd];
-    file = (HFILE)GetStdHandle(nStdHandle);
+    //file = (FILE)GetStdHandle(nStdHandle);
   }
   else
   {
@@ -540,13 +549,13 @@ static HFILE get_file(Core *core,half_t dev_fd)
 // CC1 : dev_fd_lo, CC2 : dev_fd_hi
 void Core::cio_proc()
 {
-  byte_t *buf = (byte_t*)cio.ciobuf;
+  word_t buf = cio.ciobuf;
   word_t length = get_l2()->mem_read_word((md_addr_t)buf);
   byte_t command = get_l2()->mem_read_byte((md_addr_t)(buf+4));
-  byte_t *param = (buf + 5);
+  word_t param = (buf + 5);
   half_t dev_fd,count;
   byte_t dev_fd_byte_lo, dev_fd_byte_hi;
-  byte_t *data = buf + 13;
+  word_t data = buf + 13;
   count = length;
   word_t param1 = get_l2()->mem_read_word((md_addr_t)param);
   dev_fd_byte_lo = param1 >> 24;
@@ -554,7 +563,7 @@ void Core::cio_proc()
   dev_fd = dev_fd_byte_lo | (dev_fd_byte_hi << 8);
 
   //FILE *file;
-  HFILE file;
+  FILE *file;
 
   switch(command)
   {
@@ -574,24 +583,24 @@ void Core::cio_proc()
             break;
           }
         }
-        //FILE *file = fopen(name,get_mode(flags));
-        file = _lopen(name,flags);
+        FILE *file = fopen(name, fget_mode(flags));
+        //file = _lopen(name,flags);
         //assert(file);
 
         // xxx write back file handle
-        get_l2()->mem_write_byte((md_addr_t)buf+4,BYTE_MASK(file >> 0));
-        get_l2()->mem_write_byte((md_addr_t)buf+5,BYTE_MASK(file >> 8));
-        get_l2()->mem_write_byte((md_addr_t)buf+6,BYTE_MASK(file >> 16));
-        get_l2()->mem_write_byte((md_addr_t)buf+7,BYTE_MASK(file >> 24));
+        get_l2()->mem_write_byte((md_addr_t)buf+4,BYTE_MASK(fileno(file) >> 0));
+        get_l2()->mem_write_byte((md_addr_t)buf+5,BYTE_MASK(fileno(file) >> 8));
+        get_l2()->mem_write_byte((md_addr_t)buf+6,BYTE_MASK(fileno(file) >> 16));
+        get_l2()->mem_write_byte((md_addr_t)buf+7,BYTE_MASK(fileno(file) >> 24));
 
         //map it
-        if(file != 0xFFFFFFFF)
+        if(file != NULL)
         {
           get_fentry().insert(std::make_pair(dev_fd,file));
         }
 
         get_ofs() << "try to open file:" << name << "\n";
-        get_ofs() << "open file:" << file <<",dev_fd:" << dev_fd << "\n";
+        get_ofs() << "open file:" << fileno(file) <<",dev_fd:" << dev_fd << "\n";
         get_ofs().flush();
       }
       break;
@@ -602,7 +611,7 @@ void Core::cio_proc()
         if(dev_fd > 2)
         { //FIXME? do not close stdin,stdout,stderr
           file = get_file(this,dev_fd);
-          ret = _lclose(file);
+          ret = fclose(file);
           //fflush(file); // flush before close?
           //ret = fclose(file);
           get_fentry().erase(dev_fd);
@@ -616,20 +625,29 @@ void Core::cio_proc()
 
     case 0xF2: // read
       {
-        byte_t *data_write = buf + 12;
+        word_t data_write = buf + 12;
         word_t count = BYTE_MASK(param1 >> 8) | (BYTE_MASK(param1) << 8);
         word_t fread_count = 0;
         file = get_file(this,dev_fd);
 
+        if(count > 256)
+        {
+          char buf[256];
+          sprintf(buf,"failed to read file:%d,dev_fd:%d,req_cout:%u\n",
+            fileno(file),dev_fd,count);
+          panic(buf);
+        }
+        
         char buf_read[256];
         memset(buf_read,0,256);
-        fread_count = _lread(file,buf_read,count);
+        //fread_count = _lread(file,buf_read,count);
+        fread_count = fread(buf_read, 1, count, file);
 
         if(fread_count > 256)
         {
           char buf[256];
           sprintf(buf,"failed to read file:%d,dev_fd:%d,read_cout:%u\n",
-            file,dev_fd,fread_count);
+            fileno(file),dev_fd,fread_count);
           panic(buf);
         }
         
@@ -675,7 +693,7 @@ void Core::cio_proc()
               break;
             data++;
           }
-          _lwrite(file,buf,print_cnt);
+          fwrite(buf,1,print_cnt,file);
           get_ofs() << buf; // NEED?
           if(count >= _1K)
           {
@@ -719,7 +737,7 @@ lseek cmd:
         origin |= b << 8;
 
         //int ret = fseek(file,offset,origin);
-        int ret = _llseek(file,offset,origin);
+        int ret = fseek(file,offset,origin);
         b = BYTE_MASK(ret);
         get_l2()->mem_write_byte(write_back_param,b);
         b = BYTE_MASK(ret >> 8);
@@ -1755,10 +1773,10 @@ void Core::profile(cycle_t cycle)
 {
   if(( cycle & 0xFFFFFF) == 0)
   {
-    DWORD current_tick = GetTickCount();
+    int32_t current_tick = GetTickCount();
     static md_addr_t last_pc = 0;
-    DWORD diff = current_tick - tick_count;
-    DWORD diff_inst = total_cycle - current_tick;
+    int32_t diff = current_tick - tick_count;
+    int32_t diff_inst = total_cycle - current_tick;
     tick_count = current_tick;
     //get_ofs() << "Use " << diff << " Ticks to run 16777215 cycles\n";
     get_ofs() << "MCPS: " << ((double)0xFFFFFF/1000/diff) << "MHz | " <<

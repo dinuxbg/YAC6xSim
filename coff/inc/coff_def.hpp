@@ -3,6 +3,7 @@
 
 #include <exception>
 #include <string>
+#include <cstring>
 #include <sstream>
 
 //macros
@@ -204,8 +205,8 @@ inline void read_buf(char*& pAddress, char* dst, int num)
 
   if (num_to_cpy > 0)
   {
-    memset(dst,0,num+1);
-    memcpy(dst,pAddress,num_to_cpy);
+    ::std::memset(dst,0,num+1);
+    ::std::memcpy(dst,pAddress,num_to_cpy);
   }
 
   pAddress += num_to_cpy;
@@ -215,7 +216,7 @@ template <class T>
 inline std::string hex_str(T val)
 {
   static char buf[256];
-  sprintf_s(buf,256,"0x%08x",val);
+  snprintf(buf,256,"0x%08x",val);
   return std::string(buf);
 }
 
@@ -223,14 +224,14 @@ template <class T>
 inline std::string hex_str_short(T val)
 {
   static char buf[256];
-  sprintf_s(buf,256,"0x%04x",val);
+  snprintf(buf,256,"0x%04x",val);
   return std::string(buf);
 }
 
 inline std::string hex_str_c(char c)
 {
   static char buf[16];
-  sprintf_s(buf,16,"0x%02x",c);
+  snprintf(buf,16,"0x%02x",c);
   return std::string(buf);
 }
 

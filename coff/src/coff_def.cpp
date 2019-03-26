@@ -40,13 +40,13 @@ std::string COFF_header::to_s()
   ss << "Header Info:\n";
 
   // version ID
-  sprintf_s(buf,256,"0x%04x",versionID);
+  snprintf(buf,256,"0x%04x",versionID);
   ss << " version ID: " << buf << "\n";
 
   ss << " Number Of Section Headers: " << numOfSecHeaders << "\n";
 
   // time stamp
-  sprintf_s(buf,256,"0x%08x",timeStamp);
+  snprintf(buf,256,"0x%08x",timeStamp);
   ss << " (TODO)Time Stamp: " << buf << "\n";
 
   ss << " Start address of symbol table: " << to_hex_str(addressOfST) << "\n";
@@ -57,7 +57,7 @@ std::string COFF_header::to_s()
 
   ss << " Has option header? : " << yes_or_no(optionHeaderLen>0) << "\n";
 
-  sprintf_s(buf,256,"0x%04x",flags);
+  snprintf(buf,256,"0x%04x",flags);
   ss << " (TODO)Flags: " << buf << "\n";
 
   ss << " Target ID: ";
@@ -87,7 +87,7 @@ std::string COFF_header::to_s()
   default:
     ss << "Unknown";
   }
-  sprintf_s(buf,256,"(0x%04x)",targetID);
+  snprintf(buf,256,"(0x%04x)",targetID);
   ss << buf << "\n-----\n";
   return ss.str();
 }

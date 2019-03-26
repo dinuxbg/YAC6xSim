@@ -26,7 +26,7 @@ class L2MemCtroller
 {
 public:
   // memory callback
-  typedef word_t (* __fastcall mem_cb_t)(byte_t type,md_addr_t addr,word_t val);
+  typedef word_t (* mem_cb_t)(byte_t type,md_addr_t addr,word_t val);
 
   static const word_t ptbl_size = 16 * 1024; // 16K table entry
   static const word_t l2_ram_size = 1024 * 1024; // 1024K

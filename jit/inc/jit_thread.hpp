@@ -6,11 +6,15 @@
 
 #include <list>
 #include <vector>
-#include <process.h>  
-#include <Windows.h>
+#include <pthread.h>
 
+#ifdef _WIN32
 extern HANDLE jit_compile_req_event;
 extern HANDLE jit_mutext;
+#else
+extern pthread_cond_t jit_compile_req_event;
+extern pthread_mutex_t jit_mutext;
+#endif
 
 class JITThread
 {

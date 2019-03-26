@@ -1,4 +1,7 @@
+#include <cstring>
+
 #include "common/inc/def.hpp"
+
 
 BEGIN_NS
 
@@ -195,13 +198,13 @@ myvsprintf(char *obuf, char *format, va_list v)
   int k, lradix, mradix;
 
   /* pointer to sign, "0x", "0X", or empty */
-  char *prefix;
+  const char *prefix;
 
   /* values are developed in this buffer */
   static char buf[MAXDIGS*4], buf1[MAXDIGS*4];
 
   /* pointer to a translate table for digits of whatever radix */
-  char *tab;
+  const char *tab;
 
   /* value being converted, if integer */
   slargeint_t val;
@@ -404,14 +407,14 @@ myvsprintf(char *obuf, char *format, va_list v)
 	  /* print floating point value */
 	  sprintf(buf, buf1, fval);
 	  bp = buf;
-	  p = bp + strlen(bp);
+	  p = bp + ::std::strlen(bp);
 	  break;
 
 	case 's':
 	  bp = va_arg(v, char *);
 	  if (bp == NULL)
 	    bp = "(null)";
-	  p = bp + strlen(bp);
+	  p = bp + ::std::strlen(bp);
 	  break;
 
 	case '%':
@@ -516,10 +519,12 @@ fatal(char *fmt, ...)
 
   fprintf(stderr, "fatal: ");
   myvfprintf(stderr, fmt, v);
+#if 0
 #ifdef __GNUC__
   if (verbose)
     fprintf(stderr, " [%s:%s, line %d]", func, file, line);
 #endif /* __GNUC__ */
+#endif
   fprintf(stderr, "\n");
   //if (hook_fn)
   //  (*hook_fn)(stderr);

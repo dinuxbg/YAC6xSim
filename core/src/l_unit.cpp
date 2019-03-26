@@ -1296,7 +1296,7 @@ DE_FUNC(LUnit,de_32bit_1or2_src,add_f3)
 // scst5,xsint,sint ADD 000 0010
 DE_FUNC(LUnit,de_32bit_1or2_src,add_f4_nc)
 {
-  NO_CONDITION(core,cregz);
+  NO_CONDITION();
 
   //word_t src1_val = get_sign_ext_lsb5_quick(src1);
   word_t src2_val = core->reg_read(xside,src2);

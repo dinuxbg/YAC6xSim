@@ -9,6 +9,7 @@
 #include <iostream>
 #include <sstream>
 #include <stdarg.h>
+#include <stdint.h>
 
 #include "common/inc/endian.hpp"
 
@@ -65,10 +66,10 @@ typedef signed int sword_t;
 typedef float sfloat_t;			/* single-precision float - 32 bits */
 typedef double dfloat_t;		/* double-precision float - 64 bits */
 
-#if defined(_MSC_VER)
+#if 1 //defined(_MSC_VER)
 #define HOST_HAS_QWORD
-typedef unsigned __int64 qword_t;	/* qword - 64 bits */
-typedef signed __int64 sqword_t;
+typedef uint64_t qword_t;	/* qword - 64 bits */
+typedef int64_t sqword_t;
 #define ULL(N)		((qword_t)(N))
 #define LL(N)		((sqword_t)(N))
 #else /* !__GNUC__ && !__alpha */
@@ -881,7 +882,7 @@ template <class T>
 inline std::string to_hex_str(T val)
 {
   static char buf[256];
-  sprintf_s(buf,256,"0x%08x",val);
+  snprintf(buf,256,"0x%08x",val);
   return std::string(buf);
 }
 
@@ -903,7 +904,7 @@ template <>
 inline std::string to_hex_str(qword_t val)
 {
   static char buf[256];
-  sprintf_s(buf,256,"0x%08x %08x",(word_t)(val >> 32), (word_t)(val & 0xFFFFFFFF));
+  snprintf(buf,256,"0x%08x %08x",(word_t)(val >> 32), (word_t)(val & 0xFFFFFFFF));
   return std::string(buf);
 }
 

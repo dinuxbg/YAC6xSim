@@ -86,7 +86,7 @@ dbg_cont_t DbgSetBreakPoint::operator()(Core* core,debug_param_t& params)
 
 dbg_cont_t DbgSetCycleBreak::operator()(Core* core,debug_param_t& params)
 {
-  qword_t bp_cycle = _strtoui64(params[1].c_str(),NULL,10);
+  qword_t bp_cycle = strtol(params[1].c_str(),NULL,10);
   //core->add_bp(bp_addr);
   core->add_cycle_bp(bp_cycle);
 

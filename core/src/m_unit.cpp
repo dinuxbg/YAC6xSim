@@ -994,7 +994,7 @@ DE_FUNC(MUnit,de_32bit_mpy,mpyhus)
 
 DE_FUNC(MUnit,de_32bit_mpy,mpylh_nc)
 {
-  NO_CONDITION(core,cregz);
+  NO_CONDITION();
 
   word_t src1_val = core->reg_read(side,src1);
   word_t src2_val = core->reg_read(xside,src2);

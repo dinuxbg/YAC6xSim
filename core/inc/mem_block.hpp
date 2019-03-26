@@ -1,6 +1,7 @@
 #ifndef CORE_MEM_BLOCK_HPP
 #define CORE_MEM_BLOCK_HPP
 
+#include <cstring>
 #include "common/inc/def.hpp"
 
 BEGIN_NS
@@ -35,7 +36,7 @@ public:
       _len_in_word= (len / 4) + 1;
     }
     buf = (word_t*)calloc(1, _len_in_word * 4);
-    memset(buf,0,_len_in_word*4);
+    ::std::memset(buf,0,_len_in_word*4);
   }
 
   inline bool include(md_addr_t addr)

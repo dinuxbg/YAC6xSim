@@ -40,7 +40,7 @@ word_t esize_tbl[4] = // in bytes
   4 // reserved
 };
 
-static void __fastcall code_modify_detect(Core *core,md_addr_t start_addr,word_t word_len)
+static void code_modify_detect(Core *core,md_addr_t start_addr,word_t word_len)
 {
   MemRange *mr;
   Core::mem_prot_list_t::iterator it = core->get_mem_prot_list().begin();

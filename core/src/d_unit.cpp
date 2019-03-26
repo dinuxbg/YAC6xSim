@@ -2292,7 +2292,7 @@ DE_FUNC(DUnit,de_32bit_ld_st_basic,stw_f1)
 
 DE_FUNC(DUnit,de_32bit_ld_st_basic,stw_f2_nc)
 {
-  NO_CONDITION(core,creg_z);
+  NO_CONDITION();
 
   word_t mode = get_uint(inst->get_code(),9,4);
   word_t base_addr = core->reg_read(xside,src1);

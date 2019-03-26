@@ -122,10 +122,12 @@ std::string COFF_parser::parse_string_entry()
   char *pChar = &buf[0];
   char c;
 
+#if 0
   if((int)m_pFIn < 0x50000000)
   {
     std::cout << to_hex_str(m_pFIn) << "\n";
   }
+#endif
   while((c = fgetc(m_pFIn)) != NULL)
   {
     *pChar++ = c;
@@ -139,27 +141,27 @@ std::string COFF_parser::parse_string_entry()
 
 void COFF_parser::parse_string_table()
 {
-  fpos_t saved_pos;
-  fgetpos(m_pFIn,&saved_pos);
-  m_iBeginAddrOfStringTable = (int)saved_pos;
+  long saved_pos;
+  saved_pos = ftell(m_pFIn);
+  m_iBeginAddrOfStringTable = saved_pos;
   fseek(m_pFIn, 0L, SEEK_END);
  
-  fpos_t fsize = ftell(m_pFIn);
+  long fsize = ftell(m_pFIn);
   
   //std::cout << "current pos:" << to_hex_str(saved_pos) << "\n";
   //std::cout << "file size:" << to_hex_str(fsize) << "\n";
 
-  fsetpos(m_pFIn,&saved_pos);
+  fseek(m_pFIn,saved_pos,SEEK_SET);
   while (saved_pos < fsize)
   {
-    fpos_t pos;
-    fgetpos(m_pFIn,&pos);
-    fpos_t diff = pos - m_iBeginAddrOfStringTable;
+    long pos;
+    pos = ftell(m_pFIn);
+    long diff = pos - m_iBeginAddrOfStringTable;
 
-    std::string& str = parse_string_entry();
+    std::string str = parse_string_entry();
     StringTable_entry* pStrTE = new StringTable_entry(str,m_vecStrTbl.size()-1,diff);
     m_mapStrTbl.insert(std::make_pair(diff,pStrTE));
-    fgetpos(m_pFIn,&saved_pos);
+    saved_pos = ftell(m_pFIn);
   }
 
   //std::cout << "string table entries:" << m_vecStrTbl.size();
@@ -168,8 +170,8 @@ void COFF_parser::parse_string_table()
 void COFF_parser::parse_symbol_entry(ST_entry* pSTE)
 {
   char buf[COFF_SYMBOL_TABLE_ENTRY_LEN + 1];
-  fpos_t pos;
-  fgetpos(m_pFIn,&pos);
+  long pos;
+  pos = ftell(m_pFIn);
   if(COFF_SYMBOL_TABLE_ENTRY_LEN == fread(buf,1,COFF_SYMBOL_TABLE_ENTRY_LEN,m_pFIn))
   {
     char* pPos = &buf[0];
@@ -324,8 +326,8 @@ void COFF_parser::parse1()
     memset(buf,0,sizeof(buf));
     COFF_sectionHeader *pSecHeader = new COFF_sectionHeader;
 
-    fpos_t pos;
-    fgetpos(m_pFIn,&pos);
+    long pos;
+    pos = ftell(m_pFIn);
     //std::cout << "current pos:" << to_hex_str(pos) << "\n";
 
     if(COFF_SECTION_HEADER_LEN == fread(buf,1,COFF_SECTION_HEADER_LEN,m_pFIn))
@@ -346,10 +348,10 @@ void COFF_parser::parse1()
   }
 
   // locate to symbol table
-  fpos_t pos;
-  pos = (fpos_t)m_pCoffHeader->addressOfST;
-  fsetpos(m_pFIn,&pos);
-  fgetpos(m_pFIn,&pos);
+  long pos;
+  pos = m_pCoffHeader->addressOfST;
+  fseek(m_pFIn,pos,SEEK_SET);
+  pos = ftell(m_pFIn);
   //std::cout << "current pos:" << to_hex_str(pos) << "\n";
 
   //for (int i = 0;i < m_pCoffHeader->numOfEntryST;i++)
@@ -501,9 +503,9 @@ void COFF_parser::parse3()
     if (SEC_HAS_FLAG(pSecH->u40_43_flags,SYTP_DATA) ||
       SEC_HAS_FLAG(pSecH->u40_43_flags,SYTP_TEXT))
     {
-        fpos_t pos = pSecH->i20_23_fpRawData;
+        long pos = pSecH->i20_23_fpRawData;
         size_t sec_len = pSecH->i16_19_size;
-        fsetpos(m_pFIn,&pos);
+        fseek(m_pFIn,pos,SEEK_SET);
 
         char* raw = new char[pSecH->i16_19_size + 1];
         memset(raw,0,pSecH->i16_19_size + 1);
@@ -567,9 +569,9 @@ void COFF_parser::parse3()
 void COFF_parser::read_debug_abbrev_raw_info(COFF_sectionHeader* pSecH)
 {
   // read raw data in memory
-  fpos_t fpos;
+  long fpos;
   fpos = pSecH->i20_23_fpRawData;
-  fsetpos(m_pFIn,&fpos);
+  fseek(m_pFIn,fpos,SEEK_SET);
 
   m_pcDebugAbbrevRaw = new char[pSecH->i16_19_size + 1];
   memset(m_pcDebugAbbrevRaw,0,pSecH->i16_19_size + 1);
@@ -585,9 +587,9 @@ void COFF_parser::read_debug_abbrev_raw_info(COFF_sectionHeader* pSecH)
 
 void COFF_parser::read_debug_info_raw_info(COFF_sectionHeader* pSecH)
 {
-  fpos_t pos;
+  long pos;
   pos = pSecH->i20_23_fpRawData;
-  fsetpos(m_pFIn,&pos);
+  fseek(m_pFIn,pos,SEEK_SET);
 
   m_pcDebugInfoRaw = new char[pSecH->i16_19_size + 1];
   memset(m_pcDebugInfoRaw,0,pSecH->i16_19_size + 1);
