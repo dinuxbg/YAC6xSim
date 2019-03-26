@@ -1,0 +1,7 @@
+
+_WIN32
+_MSC_VER
+USE_LIBJIT
+CORE_USE_LLVM
+TODO-Linux
+Review-review-review!
