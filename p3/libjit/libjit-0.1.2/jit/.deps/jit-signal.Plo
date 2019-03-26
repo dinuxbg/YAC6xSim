@@ -1,3 +1,0 @@
-jit-signal.lo: jit-signal.c ../config.h
-
-../config.h:
